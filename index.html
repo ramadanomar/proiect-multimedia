@@ -7,8 +7,57 @@
     <link rel="stylesheet" href="/src/styles.css" />
     <title>Vite + TS</title>
   </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
+  <body class="bg-gray-800 text-white">
+    <div id="app" class="p-4 flex flex-col gap-4 max-w-4xl mx-auto">
+      <h1 class="text-2xl font-bold">Custom Video Player</h1>
+
+      <!-- Playlist management -->
+      <div class="flex items-center gap-2">
+        <input
+          id="file-input"
+          type="file"
+          multiple
+          accept="video/*"
+          class="file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 text-sm text-white"
+        />
+        <p class="text-sm text-gray-300">or Drag & Drop here:</p>
+        <div
+          id="drop-zone"
+          class="border border-dashed border-gray-300 p-4 rounded cursor-pointer"
+        >
+          Drop files
+        </div>
+      </div>
+
+      <!-- Playlist UI -->
+      <ul id="playlist" class="bg-gray-700 p-2 rounded"></ul>
+
+      <!-- Video Container (Canvas) -->
+      <!-- We'll draw the video + controls + subtitles inside this canvas -->
+      <canvas
+        id="video-canvas"
+        class="bg-black w-full h-auto rounded"
+        width="800"
+        height="450"
+      >
+        Your browser does not support the HTML5 canvas tag.
+      </canvas>
+
+      <!-- Effects Selection -->
+      <div>
+        <label for="effect-select" class="mr-2">Select Video Effect:</label>
+        <select id="effect-select" class="text-black px-2 py-1 rounded">
+          <option value="none">None</option>
+          <option value="grayscale">Grayscale</option>
+          <option value="invert">Invert</option>
+          <option value="threshold">Threshold</option>
+          <!-- Add your custom effects here -->
+        </select>
+      </div>
+
+      <!-- Debug Info (optional) -->
+      <div id="debug-info" class="text-sm text-gray-400"></div>
+    </div>
+    <script type="module" src="./src/main.ts"></script>
   </body>
 </html>
