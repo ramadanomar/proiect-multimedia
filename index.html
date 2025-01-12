@@ -5,16 +5,25 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="/src/compiled.css" />
-    <title>Vite + TS</title>
+    <title>Custom video player</title>
   </head>
   <body
     class="bg-gray-900 text-white min-h-screen flex flex-col items-center justify-start"
   >
     <div id="app" class="container mx-auto px-4 pt-6">
-      <h1 class="text-3xl font-bold mb-6">Custom Video Player</h1>
+      <h1 class="text-3xl font-bold mb-6 text-center">Custom Video Player</h1>
+      <h2 id="created-by" class="text-sm text-gray-400 mb-4 text-center">
+        Created by
+        <a
+          href="https://git.new/github-account"
+          target="_blank"
+          class="underline hover:no-underline font-bold text-white"
+          >Ramadan Omar</a
+        >
+      </h2>
 
       <!-- Playlist Management -->
-      <div class="flex flex-wrap items-center gap-4 mb-4">
+      <div class="flex flex-wrap items-center gap-4 mb-4 justify-center">
         <!-- File Input -->
         <div class="flex items-center gap-2">
           <input
@@ -56,7 +65,7 @@
       </div>
 
       <!-- Effects Selection -->
-      <div class="flex items-center gap-2 mb-4">
+      <div class="flex items-center gap-2 mb-4 justify-center">
         <label for="effect-select" class="font-medium"
           >Select Video Effect:</label
         >
@@ -71,10 +80,10 @@
         </select>
       </div>
 
-      <!-- Debug Info (optional) -->
+      <!-- Debug Info -->
       <div
         id="debug-info"
-        class="text-sm text-gray-400 font-mono p-2 bg-gray-800 border border-gray-700 rounded"
+        class="text-sm text-gray-400 font-mono p-2 bg-gray-800 border border-gray-700 rounded justify-center"
       ></div>
     </div>
 

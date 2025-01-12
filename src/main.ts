@@ -7,40 +7,178 @@ import { PlaylistItem, VideoSubtitle } from "./types";
  * Encapsulates state, DOM references, event handlers, and rendering logic.
  */
 class VideoPlayer {
-  // Public or private fields as needed
+  /**
+   * Holds the current list of playlist items.
+   * @private
+   * @type {PlaylistItem[]}
+   */
   private playlist: PlaylistItem[] = [];
+
+  /**
+   * Index of the currently playing video in the playlist.
+   * @private
+   * @type {number}
+   */
   private currentIndex = 0;
+
+  /**
+   * Collection of active subtitles (loaded from JSON).
+   * @private
+   * @type {VideoSubtitle[]}
+   */
   private currentSubtitles: VideoSubtitle[] = [];
+
+  /**
+   * The volume level for the video (0 to 1).
+   * @private
+   * @type {number}
+   */
   private volumeLevel = 1.0;
 
-  // Canvas / Video dimensions
+  /**
+   * Width of the main video canvas in pixels.
+   * @private
+   * @readonly
+   * @type {number}
+   */
   private readonly VIDEO_WIDTH = 800;
+
+  /**
+   * Height of the main video canvas in pixels.
+   * @private
+   * @readonly
+   * @type {number}
+   */
   private readonly VIDEO_HEIGHT = 450;
 
-  // DOM elements
+  // --------------------------------------------------
+  // DOM Elements
+  // --------------------------------------------------
+
+  /**
+   * Reference to the <ul> element that displays the playlist.
+   * @private
+   * @type {HTMLUListElement}
+   */
   private readonly playlistUL: HTMLUListElement;
+
+  /**
+   * Reference to the <input type="file"> used to add new videos.
+   * @private
+   * @type {HTMLInputElement}
+   */
   private readonly fileInput: HTMLInputElement;
+
+  /**
+   * Reference to the drop zone <div> for drag-and-drop additions.
+   * @private
+   * @type {HTMLDivElement}
+   */
   private readonly dropZone: HTMLDivElement;
+
+  /**
+   * Reference to the <select> for choosing video effects.
+   * @private
+   * @type {HTMLSelectElement}
+   */
   private readonly effectSelect: HTMLSelectElement;
-  private readonly debugInfo: HTMLDivElement | null; // may be null if not found
+
+  /**
+   * Reference to a debug <div> showing current playback info.
+   * May be null if the element is not found.
+   * @private
+   * @type {HTMLDivElement | null}
+   */
+  private readonly debugInfo: HTMLDivElement | null;
+
+  /**
+   * The main <canvas> element used to display video + overlays.
+   * @private
+   * @type {HTMLCanvasElement}
+   */
   private readonly canvas: HTMLCanvasElement;
+
+  /**
+   * The 2D rendering context for the main canvas.
+   * @private
+   * @type {CanvasRenderingContext2D}
+   */
   private readonly ctx: CanvasRenderingContext2D;
 
-  // Offscreen video elements
+  // --------------------------------------------------
+  // Video Elements
+  // --------------------------------------------------
+
+  /**
+   * A hidden <video> element providing frames for main playback.
+   * @private
+   * @type {HTMLVideoElement}
+   */
   private readonly videoElement: HTMLVideoElement;
+
+  /**
+   * A hidden <video> element used for generating preview frames.
+   * @private
+   * @type {HTMLVideoElement}
+   */
   private readonly previewVideoElement: HTMLVideoElement;
 
-  // Control areas for click detection
+  // --------------------------------------------------
+  // Control Areas
+  // --------------------------------------------------
+
+  /**
+   * The clickable "Previous" button area within the canvas.
+   * @private
+   */
   private btnPrevArea = { x: 20, y: this.VIDEO_HEIGHT - 50, w: 30, h: 30 };
+
+  /**
+   * The clickable "Play/Pause" button area within the canvas.
+   * @private
+   */
   private btnPlayArea = { x: 60, y: this.VIDEO_HEIGHT - 50, w: 30, h: 30 };
+
+  /**
+   * The clickable "Next" button area within the canvas.
+   * @private
+   */
   private btnNextArea = { x: 100, y: this.VIDEO_HEIGHT - 50, w: 30, h: 30 };
+
+  /**
+   * The clickable "Volume" button/area within the canvas.
+   * @private
+   */
   private volumeArea = { x: 140, y: this.VIDEO_HEIGHT - 50, w: 80, h: 30 };
+
+  /**
+   * The progress bar area within the canvas (for scrubbing).
+   * @private
+   */
   private progressBar = { x: 240, y: this.VIDEO_HEIGHT - 40, w: 500, h: 10 };
 
-  // Mouse position and progress-bar hovering state
+  // --------------------------------------------------
+  // Mouse Position & State
+  // --------------------------------------------------
+
+  /**
+   * Whether the mouse is currently hovering over the progress bar.
+   * @private
+   * @type {boolean}
+   */
   private isMouseOverProgressBar = false;
+
+  /**
+   * Current mouse X/Y coordinates relative to the canvas.
+   * @private
+   */
   private mousePos = { x: 0, y: 0 };
 
+  /**
+   * Constructs a new VideoPlayer and queries all necessary DOM elements.
+   * Also sets up offscreen <video> elements and obtains the 2D context.
+   * @constructor
+   */
   constructor() {
     // Grab references to DOM elements
     this.playlistUL = document.getElementById("playlist") as HTMLUListElement;
@@ -73,7 +211,10 @@ class VideoPlayer {
    * - Load settings
    * - Build default playlist
    * - Register event listeners
-   * - Start rendering loop
+   * - Start the rendering loop
+   * - Update debug info periodically
+   * @public
+   * @returns {void}
    */
   public init(): void {
     this.loadSettings();
@@ -84,7 +225,7 @@ class VideoPlayer {
     this.registerDOMEvents();
     this.startRenderLoop();
 
-    // Update debug info periodically
+    // Update debug info every second
     setInterval(() => this.updateDebugInfo(), 1000);
   }
 
@@ -93,7 +234,9 @@ class VideoPlayer {
   // --------------------------------------------------
 
   /**
-   * Load saved volume and playlist index from LocalStorage, if present.
+   * Load saved volume and playlist index from localStorage, if present.
+   * @private
+   * @returns {void}
    */
   private loadSettings(): void {
     const savedVolume = localStorage.getItem("video-volume");
@@ -108,7 +251,9 @@ class VideoPlayer {
   }
 
   /**
-   * Save volume and playlist index to LocalStorage.
+   * Save volume and playlist index to localStorage.
+   * @private
+   * @returns {void}
    */
   private saveSettings(): void {
     localStorage.setItem("video-volume", this.volumeLevel.toString());
@@ -117,6 +262,8 @@ class VideoPlayer {
 
   /**
    * Build an initial playlist of at least 4 movies (static).
+   * @private
+   * @returns {void}
    */
   private buildInitialPlaylist(): void {
     this.playlist = [
@@ -147,7 +294,9 @@ class VideoPlayer {
   }
 
   /**
-   * If currentIndex is out-of-bounds, reset it to 0.
+   * Ensure currentIndex is valid (0 <= currentIndex < playlist.length).
+   * @private
+   * @returns {void}
    */
   private enforceCurrentIndex(): void {
     if (this.currentIndex < 0 || this.currentIndex >= this.playlist.length) {
@@ -160,7 +309,10 @@ class VideoPlayer {
   // --------------------------------------------------
 
   /**
-   * Render the playlist in the <ul> with reorder and delete controls.
+   * Render the playlist in the <ul>, creating reorder and delete buttons.
+   * Highlights the currently selected/playing item.
+   * @private
+   * @returns {void}
    */
   private renderPlaylist(): void {
     this.playlistUL.innerHTML = "";
@@ -186,6 +338,10 @@ class VideoPlayer {
 
   /**
    * Create the clickable title element for each playlist item.
+   * @private
+   * @param {PlaylistItem} item The playlist item data
+   * @param {number} index The index of this item in the playlist
+   * @returns {HTMLSpanElement} A span element with click handler
    */
   private createTitleElement(
     item: PlaylistItem,
@@ -204,7 +360,10 @@ class VideoPlayer {
   }
 
   /**
-   * Create the "up", "down", and "delete" buttons for each playlist item.
+   * Create a <div> containing move-up, move-down, and delete buttons.
+   * @private
+   * @param {number} index The index of the playlist item
+   * @returns {HTMLDivElement} A div containing the control buttons
    */
   private createPlaylistControls(index: number): HTMLDivElement {
     const controlsDiv = document.createElement("div");
@@ -222,7 +381,10 @@ class VideoPlayer {
   }
 
   /**
-   * Create the "↑" button to move an item up.
+   * Create the "↑" button to move an item up in the playlist.
+   * @private
+   * @param {number} index The index of the item to move up
+   * @returns {HTMLButtonElement} The button element with onclick
    */
   private createMoveUpButton(index: number): HTMLButtonElement {
     const upBtn = document.createElement("button");
@@ -242,7 +404,10 @@ class VideoPlayer {
   }
 
   /**
-   * Create the "↓" button to move an item down.
+   * Create the "↓" button to move an item down in the playlist.
+   * @private
+   * @param {number} index The index of the item to move down
+   * @returns {HTMLButtonElement} The button element with onclick
    */
   private createMoveDownButton(index: number): HTMLButtonElement {
     const downBtn = document.createElement("button");
@@ -262,7 +427,10 @@ class VideoPlayer {
   }
 
   /**
-   * Create the "X" button to delete an item from the playlist.
+   * Create the "X" button to remove an item from the playlist.
+   * @private
+   * @param {number} index The index of the item to delete
+   * @returns {HTMLButtonElement} The button element with onclick
    */
   private createDeleteButton(index: number): HTMLButtonElement {
     const delBtn = document.createElement("button");
@@ -298,14 +466,20 @@ class VideoPlayer {
 
   /**
    * Initialize the video element for playback, load subtitles (if any),
-   * and attempt to play automatically.
+   * set up the preview video, and attempt to auto-play.
+   * @private
+   * @async
+   * @param {PlaylistItem} item The playlist item to load
+   * @returns {Promise<void>}
    */
   private async setupVideo(item: PlaylistItem): Promise<void> {
     this.videoElement.src = item.src;
     this.videoElement.currentTime = 0;
     this.videoElement.volume = this.volumeLevel;
 
-    this.previewVideoElement.src = item.src; // Set preview video frame here so it can be reused while skimming through the video
+    // Set preview video source once, so we don't keep reassigning it
+    this.previewVideoElement.src = item.src;
+
     try {
       await this.videoElement.play();
     } catch (err) {
@@ -322,6 +496,10 @@ class VideoPlayer {
 
   /**
    * Fetch subtitles from a JSON file and parse them into VideoSubtitle objects.
+   * @private
+   * @async
+   * @param {string} url The URL for the subtitles JSON file
+   * @returns {Promise<VideoSubtitle[]>} Array of subtitle data
    */
   private async fetchSubtitles(url: string): Promise<VideoSubtitle[]> {
     try {
@@ -344,6 +522,8 @@ class VideoPlayer {
 
   /**
    * Register events for the canvas, file input, drag & drop, and video 'ended'.
+   * @private
+   * @returns {void}
    */
   private registerDOMEvents(): void {
     // Canvas for controls
@@ -365,6 +545,9 @@ class VideoPlayer {
 
   /**
    * Handle file input from the user selecting local video files.
+   * @private
+   * @param {Event} event The input change event
+   * @returns {void}
    */
   private handleFileInput(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -376,6 +559,9 @@ class VideoPlayer {
 
   /**
    * Handle drag-over on the drop zone to allow dropping.
+   * @private
+   * @param {DragEvent} event The dragover event
+   * @returns {void}
    */
   private handleDragOver(event: DragEvent): void {
     event.preventDefault();
@@ -383,6 +569,9 @@ class VideoPlayer {
 
   /**
    * Handle dropping files onto the drop zone.
+   * @private
+   * @param {DragEvent} event The drop event
+   * @returns {void}
    */
   private handleDrop(event: DragEvent): void {
     event.preventDefault();
@@ -396,6 +585,9 @@ class VideoPlayer {
 
   /**
    * Add a new file to the playlist by creating an object URL.
+   * @private
+   * @param {File} file The file dropped or selected by the user
+   * @returns {void}
    */
   private addFileToPlaylist(file: File): void {
     const url = URL.createObjectURL(file);
@@ -409,9 +601,11 @@ class VideoPlayer {
 
   /**
    * When the current video ends, move to the next video in the playlist.
+   * @private
+   * @returns {void}
    */
   private handleVideoEnded(): void {
-    this.nextVideo(); // or you can loop
+    this.nextVideo(); // or loop back
   }
 
   // --------------------------------------------------
@@ -420,6 +614,8 @@ class VideoPlayer {
 
   /**
    * Start the requestAnimationFrame loop to continually update the canvas.
+   * @private
+   * @returns {void}
    */
   private startRenderLoop(): void {
     const render = () => {
@@ -431,6 +627,8 @@ class VideoPlayer {
 
   /**
    * Draw the video frame, apply effects, subtitles, and overlay controls.
+   * @private
+   * @returns {void}
    */
   private drawFrame(): void {
     // Draw the current video frame
@@ -454,6 +652,8 @@ class VideoPlayer {
 
   /**
    * Apply the selected video effect (from the <select>).
+   * @private
+   * @returns {void}
    */
   private applyVideoEffect(): void {
     const effect = this.effectSelect.value;
@@ -484,6 +684,12 @@ class VideoPlayer {
     this.ctx.putImageData(imageData, 0, 0);
   }
 
+  /**
+   * Convert image data to grayscale.
+   * @private
+   * @param {Uint8ClampedArray} data The RGBA pixel data
+   * @returns {void}
+   */
   private toGrayscale(data: Uint8ClampedArray): void {
     for (let i = 0; i < data.length; i += 4) {
       const r = data[i];
@@ -494,6 +700,12 @@ class VideoPlayer {
     }
   }
 
+  /**
+   * Invert the colors of the image data.
+   * @private
+   * @param {Uint8ClampedArray} data The RGBA pixel data
+   * @returns {void}
+   */
   private toInvert(data: Uint8ClampedArray): void {
     for (let i = 0; i < data.length; i += 4) {
       data[i] = 255 - data[i];
@@ -502,6 +714,12 @@ class VideoPlayer {
     }
   }
 
+  /**
+   * Apply a threshold effect to the image data (black/white).
+   * @private
+   * @param {Uint8ClampedArray} data The RGBA pixel data
+   * @returns {void}
+   */
   private toThreshold(data: Uint8ClampedArray): void {
     for (let i = 0; i < data.length; i += 4) {
       const r = data[i];
@@ -519,6 +737,8 @@ class VideoPlayer {
 
   /**
    * Draw the currently active subtitle on the canvas (if any).
+   * @private
+   * @returns {void}
    */
   private drawSubtitles(): void {
     if (!this.currentSubtitles.length) return;
@@ -551,9 +771,11 @@ class VideoPlayer {
 
   /**
    * Draw the semi-transparent control bar (buttons, progress, volume).
+   * @private
+   * @returns {void}
    */
   private drawControls(): void {
-    // Draw the background overlay
+    // Background overlay
     this.ctx.save();
     this.ctx.globalAlpha = 0.6;
     this.ctx.fillStyle = "#000";
@@ -571,7 +793,7 @@ class VideoPlayer {
     }
     this.ctx.fillText("⏭", this.btnNextArea.x, this.btnNextArea.y + 20);
 
-    // Draw Volume
+    // Draw Volume icon
     this.ctx.fillText("🔉", this.volumeArea.x, this.volumeArea.y + 20);
     this.drawVolumeBar();
 
@@ -585,7 +807,9 @@ class VideoPlayer {
   }
 
   /**
-   * Draw the current volume level as a small bar.
+   * Draw the current volume level as a small bar on the canvas.
+   * @private
+   * @returns {void}
    */
   private drawVolumeBar(): void {
     this.ctx.save();
@@ -602,6 +826,8 @@ class VideoPlayer {
 
   /**
    * Draw the progress bar to reflect current playback time.
+   * @private
+   * @returns {void}
    */
   private drawProgressBar(): void {
     const progress = this.videoElement.duration
@@ -632,6 +858,9 @@ class VideoPlayer {
 
   /**
    * Track mouse movements to detect if we are over the progress bar.
+   * @private
+   * @param {MouseEvent} event The mousemove event
+   * @returns {void}
    */
   private handleCanvasMouseMove(event: MouseEvent): void {
     const rect = this.canvas.getBoundingClientRect();
@@ -649,6 +878,9 @@ class VideoPlayer {
 
   /**
    * Draw a small preview thumbnail on hover over the progress bar.
+   * @private
+   * @param {number} mouseX The x-coordinate of the mouse
+   * @returns {void}
    */
   private drawPreviewFrame(mouseX: number): void {
     // Calculate time for the preview
@@ -656,8 +888,7 @@ class VideoPlayer {
     const previewTime = ratio * this.videoElement.duration;
     if (previewTime < 0 || previewTime > this.videoElement.duration) return;
 
-    // Seek offscreen video to that time
-    // this.previewVideoElement.src = this.videoElement.src; no need to set src again as this will throw errors
+    // Seek offscreen video to that time (do not reset .src each time)
     this.previewVideoElement.currentTime = previewTime;
 
     this.previewVideoElement.play().then(() => {
@@ -708,6 +939,13 @@ class VideoPlayer {
 
   /**
    * Draw a background and text for the timecode in the preview thumbnail.
+   * @private
+   * @param {number} thumbnailX The x-position of the thumbnail
+   * @param {number} thumbnailY The y-position of the thumbnail
+   * @param {number} thumbnailWidth The width of the thumbnail
+   * @param {number} thumbnailHeight The height of the thumbnail
+   * @param {number} previewTime The time (in seconds) to display
+   * @returns {void}
    */
   private drawThumbnailTime(
     thumbnailX: number,
@@ -741,6 +979,9 @@ class VideoPlayer {
 
   /**
    * Handle clicks on the canvas to trigger the corresponding control.
+   * @private
+   * @param {MouseEvent} event The click event
+   * @returns {void}
    */
   private handleCanvasClick(event: MouseEvent): void {
     const rect = this.canvas.getBoundingClientRect();
@@ -764,6 +1005,11 @@ class VideoPlayer {
 
   /**
    * Utility method for hit-testing a point against a rectangle.
+   * @private
+   * @param {number} px Mouse X
+   * @param {number} py Mouse Y
+   * @param {{x: number, y: number, w: number, h: number}} rect A rectangle
+   * @returns {boolean} True if the point is within the rectangle
    */
   private isPointInRect(
     px: number,
@@ -781,6 +1027,8 @@ class VideoPlayer {
 
   /**
    * Toggle play/pause on the current video.
+   * @private
+   * @returns {void}
    */
   private togglePlay(): void {
     if (this.videoElement.paused) {
@@ -792,6 +1040,8 @@ class VideoPlayer {
 
   /**
    * Move to the previous video in the playlist (loop if needed).
+   * @private
+   * @returns {void}
    */
   private prevVideo(): void {
     this.currentIndex--;
@@ -799,12 +1049,14 @@ class VideoPlayer {
       this.currentIndex = this.playlist.length - 1;
     }
     this.saveSettings();
-    this.setupVideo(this.playlist[this.currentIndex]);
+    void this.setupVideo(this.playlist[this.currentIndex]);
     this.renderPlaylist();
   }
 
   /**
    * Move to the next video in the playlist (loop if needed).
+   * @private
+   * @returns {void}
    */
   private nextVideo(): void {
     this.currentIndex++;
@@ -812,12 +1064,14 @@ class VideoPlayer {
       this.currentIndex = 0;
     }
     this.saveSettings();
-    this.setupVideo(this.playlist[this.currentIndex]);
+    void this.setupVideo(this.playlist[this.currentIndex]);
     this.renderPlaylist();
   }
 
   /**
-   * Cycle the volume (0, 0.2, 0.4, 0.6, 0.8, 1.0, then back to 0).
+   * Cycle the volume in increments of 0.2 (0 -> 1 -> 0).
+   * @private
+   * @returns {void}
    */
   private cycleVolume(): void {
     this.volumeLevel += 0.2;
@@ -834,6 +1088,8 @@ class VideoPlayer {
 
   /**
    * Update the debug info element (if present) with current playback info.
+   * @private
+   * @returns {void}
    */
   private updateDebugInfo(): void {
     if (!this.debugInfo) return;
@@ -848,7 +1104,10 @@ class VideoPlayer {
   }
 
   /**
-   * Convert a number of seconds to an mm:ss string.
+   * Convert a number of seconds to an mm:ss string format.
+   * @private
+   * @param {number} seconds The time in seconds
+   * @returns {string} The formatted time string (mm:ss)
    */
   private formatTime(seconds: number): string {
     if (!Number.isFinite(seconds)) return "00:00";
@@ -859,7 +1118,7 @@ class VideoPlayer {
 }
 
 // --------------------------------------------------
-// Instantiate and initialize
+// Instantiate and initialize the VideoPlayer
 // --------------------------------------------------
 const player = new VideoPlayer();
 player.init();
