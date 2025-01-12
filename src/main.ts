@@ -11,7 +11,7 @@ let volumeLevel = 1.0;
 const VIDEO_WIDTH = 800;
 const VIDEO_HEIGHT = 450;
 
-// We draw everything on one <canvas>. We'll have an offscreen <video> for the main playback
+// We draw everything on one <canvas>. We'll have an offscreen <video> for playback
 // and an offscreen <video> for preview frames.
 const videoElement = document.createElement("video");
 videoElement.crossOrigin = "anonymous";
@@ -35,13 +35,11 @@ const effectSelect = document.getElementById(
 ) as HTMLSelectElement;
 const debugInfo = document.getElementById("debug-info") as HTMLDivElement;
 
-// Control button "areas" (we'll detect clicks by x,y in the canvas)
+// Control button "areas" (for click detection)
 let btnPrevArea = { x: 20, y: VIDEO_HEIGHT - 50, w: 30, h: 30 };
 let btnPlayArea = { x: 60, y: VIDEO_HEIGHT - 50, w: 30, h: 30 };
 let btnNextArea = { x: 100, y: VIDEO_HEIGHT - 50, w: 30, h: 30 };
-// Volume area, simplified as a small rectangle
 let volumeArea = { x: 140, y: VIDEO_HEIGHT - 50, w: 80, h: 30 };
-// Progress bar area
 let progressBar = { x: 240, y: VIDEO_HEIGHT - 40, w: 500, h: 10 };
 
 //
@@ -51,8 +49,7 @@ function init() {
   // Load settings from Local Storage
   loadSettings();
 
-  // Prepare our initial static playlist (at least 4 items).
-  // Note: You must have these files in /public/media. Adjust paths as needed.
+  // Prepare initial static playlist (at least 4 items).
   playlist = [
     {
       id: "movie1",
@@ -81,7 +78,7 @@ function init() {
   // Render playlist
   renderPlaylist();
 
-  // Load the currentIndex from storage if it exists
+  // Ensure currentIndex is valid
   if (currentIndex < 0 || currentIndex >= playlist.length) {
     currentIndex = 0;
   }
@@ -96,7 +93,7 @@ function init() {
   dropZone.addEventListener("dragover", handleDragOver);
   dropZone.addEventListener("drop", handleDrop);
 
-  // Video ended => go next automatically
+  // Go to next video automatically when current ends
   videoElement.addEventListener("ended", handleVideoEnded);
 
   // Start animation loop
@@ -130,11 +127,11 @@ function renderPlaylist() {
   playlist.forEach((item, index) => {
     const li = document.createElement("li");
     li.className =
-      "flex items-center justify-between mb-2 bg-gray-600 p-2 rounded";
+      "flex items-center justify-between p-3 hover:bg-gray-700 transition-colors";
 
     const titleSpan = document.createElement("span");
     titleSpan.textContent = `${index + 1}. ${item.title}`;
-    titleSpan.className = "cursor-pointer";
+    titleSpan.className = "cursor-pointer text-gray-100 hover:text-blue-300";
     titleSpan.onclick = () => {
       currentIndex = index;
       setupVideo(playlist[currentIndex]);
@@ -142,13 +139,15 @@ function renderPlaylist() {
       saveSettings();
     };
 
+    // Buttons container
     const controlsDiv = document.createElement("div");
     controlsDiv.className = "flex items-center gap-2";
 
     // Move Up
     const upBtn = document.createElement("button");
     upBtn.textContent = "↑";
-    upBtn.className = "bg-blue-500 px-2 py-1 rounded text-white text-sm";
+    upBtn.className =
+      "bg-blue-600 hover:bg-blue-500 text-white text-xs px-2 py-1 rounded";
     upBtn.onclick = () => {
       if (index > 0) {
         const tmp = playlist[index];
@@ -157,10 +156,12 @@ function renderPlaylist() {
         renderPlaylist();
       }
     };
+
     // Move Down
     const downBtn = document.createElement("button");
     downBtn.textContent = "↓";
-    downBtn.className = "bg-blue-500 px-2 py-1 rounded text-white text-sm";
+    downBtn.className =
+      "bg-blue-600 hover:bg-blue-500 text-white text-xs px-2 py-1 rounded";
     downBtn.onclick = () => {
       if (index < playlist.length - 1) {
         const tmp = playlist[index];
@@ -169,13 +170,14 @@ function renderPlaylist() {
         renderPlaylist();
       }
     };
+
     // Delete
     const delBtn = document.createElement("button");
     delBtn.textContent = "X";
-    delBtn.className = "bg-red-500 px-2 py-1 rounded text-white text-sm";
+    delBtn.className =
+      "bg-red-600 hover:bg-red-500 text-white text-xs px-2 py-1 rounded";
     delBtn.onclick = () => {
       playlist.splice(index, 1);
-      // Adjust currentIndex if needed
       if (currentIndex >= playlist.length) {
         currentIndex = playlist.length - 1;
       }
@@ -198,7 +200,7 @@ function renderPlaylist() {
 
     // Highlight the currently playing item
     if (index === currentIndex) {
-      li.classList.add("border", "border-yellow-300");
+      li.classList.add("bg-gray-700");
     }
 
     li.appendChild(titleSpan);
@@ -282,7 +284,7 @@ function handleDrop(event: DragEvent) {
 }
 
 function addFileToPlaylist(file: File) {
-  // Create an object URL
+  // Create object URL
   const url = URL.createObjectURL(file);
   const newItem: PlaylistItem = {
     id: file.name + Date.now(),
@@ -297,12 +299,7 @@ function addFileToPlaylist(file: File) {
 //
 function updateCanvas() {
   // Draw the current video frame
-  if (!videoElement.paused && !videoElement.ended) {
-    ctx.drawImage(videoElement, 0, 0, VIDEO_WIDTH, VIDEO_HEIGHT);
-  } else {
-    // Even if paused, re-draw so that controls remain visible
-    ctx.drawImage(videoElement, 0, 0, VIDEO_WIDTH, VIDEO_HEIGHT);
-  }
+  ctx.drawImage(videoElement, 0, 0, VIDEO_WIDTH, VIDEO_HEIGHT);
 
   // Post-process effect
   applyVideoEffect();
@@ -313,19 +310,19 @@ function updateCanvas() {
   // Draw controls
   drawControls();
 
-  // Next animation frame
+  // Next frame
   requestAnimationFrame(updateCanvas);
 }
 
 //
-// APPLY SELECTED VIDEO EFFECT (on the drawn frame)
+// APPLY SELECTED VIDEO EFFECT
 //
 function applyVideoEffect() {
   const effect = effectSelect.value;
   if (effect === "none") return;
 
   const imageData = ctx.getImageData(0, 0, VIDEO_WIDTH, VIDEO_HEIGHT);
-  const data = imageData.data; // RGBA array
+  const data = imageData.data;
 
   switch (effect) {
     case "grayscale":
@@ -339,9 +336,9 @@ function applyVideoEffect() {
       break;
     case "invert":
       for (let i = 0; i < data.length; i += 4) {
-        data[i] = 255 - data[i]; // r
-        data[i + 1] = 255 - data[i + 1]; // g
-        data[i + 2] = 255 - data[i + 2]; // b
+        data[i] = 255 - data[i];
+        data[i + 1] = 255 - data[i + 1];
+        data[i + 2] = 255 - data[i + 2];
       }
       break;
     case "threshold":
@@ -373,17 +370,15 @@ function drawSubtitles() {
   if (subtitle) {
     ctx.font = "24px sans-serif";
     ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-    // Background behind subtitle
+    // background behind the subtitle
     const textMetrics = ctx.measureText(subtitle.text);
     const textWidth = textMetrics.width;
     const textHeight = 24; // approximate
     const x = VIDEO_WIDTH / 2 - textWidth / 2;
     const y = VIDEO_HEIGHT - 50;
 
-    // Draw background rectangle
     ctx.fillRect(x - 5, y - textHeight, textWidth + 10, textHeight + 10);
 
-    // Draw text
     ctx.fillStyle = "#ffffff";
     ctx.fillText(subtitle.text, x, y);
   }
@@ -403,25 +398,27 @@ function drawControls() {
   ctx.fillStyle = "white";
   ctx.font = "20px sans-serif";
   ctx.fillText("⏮", btnPrevArea.x, btnPrevArea.y + 20);
+
   // Play / Pause
   if (videoElement.paused) {
     ctx.fillText("▶️", btnPlayArea.x, btnPlayArea.y + 20);
   } else {
     ctx.fillText("⏸", btnPlayArea.x, btnPlayArea.y + 20);
   }
+
   // Next
   ctx.fillText("⏭", btnNextArea.x, btnNextArea.y + 20);
 
   // Volume
   ctx.fillText("🔉", volumeArea.x, volumeArea.y + 20);
-  // draw volume level as a simple bar
+  // Draw volume level as a small bar
   ctx.save();
   ctx.fillStyle = "white";
   const volumeBarWidth = volumeLevel * 70;
   ctx.fillRect(volumeArea.x + 25, volumeArea.y + 10, volumeBarWidth, 5);
   ctx.restore();
 
-  // Progress bar
+  // Progress Bar
   const progress = videoElement.duration
     ? videoElement.currentTime / videoElement.duration
     : 0;
@@ -469,7 +466,6 @@ function handleCanvasMouseMove(event: MouseEvent) {
 }
 
 function drawPreviewFrame(mouseX: number) {
-  // Calculate the time
   const ratio = (mouseX - progressBar.x) / progressBar.w;
   const previewTime = ratio * videoElement.duration;
 
@@ -478,17 +474,14 @@ function drawPreviewFrame(mouseX: number) {
   // Seek offscreen video to that time
   previewVideoElement.src = videoElement.src;
   previewVideoElement.currentTime = previewTime;
-  // We "force" update by playing then pausing quickly (some browsers require that).
+
   previewVideoElement.play().then(() => {
     previewVideoElement.pause();
-    // Draw the preview
-    // We'll draw a small thumbnail above the progress bar
     const thumbnailWidth = 120;
     const thumbnailHeight = 80;
     const thumbnailX = mouseX - thumbnailWidth / 2;
     const thumbnailY = progressBar.y - thumbnailHeight - 10;
 
-    // Because we can't reliably wait for the frame to load, let's try/catch
     try {
       ctx.save();
       ctx.strokeStyle = "white";
@@ -507,10 +500,10 @@ function drawPreviewFrame(mouseX: number) {
       );
       ctx.restore();
     } catch (e) {
-      // might fail if the frame hasn't loaded yet
+      // Might fail if the frame hasn't loaded yet
     }
 
-    // Show time code in the thumbnail
+    // Show time code in thumbnail
     ctx.fillStyle = "black";
     ctx.globalAlpha = 0.7;
     ctx.fillRect(
@@ -541,31 +534,26 @@ function handleCanvasClick(event: MouseEvent) {
   const x = event.clientX - rect.left;
   const y = event.clientY - rect.top;
 
-  // Check previous button
   if (isPointInRect(x, y, btnPrevArea)) {
     prevVideo();
     return;
   }
-  // Play/Pause
   if (isPointInRect(x, y, btnPlayArea)) {
     togglePlay();
     return;
   }
-  // Next
   if (isPointInRect(x, y, btnNextArea)) {
     nextVideo();
     return;
   }
-  // Volume
   if (isPointInRect(x, y, volumeArea)) {
-    // increase volume or cycle volume for demonstration?
+    // Increase volume or cycle volume for demonstration
     volumeLevel += 0.2;
     if (volumeLevel > 1) volumeLevel = 0;
     videoElement.volume = volumeLevel;
     saveSettings();
     return;
   }
-  // Progress bar
   if (isPointInRect(x, y, progressBar)) {
     const ratio = (x - progressBar.x) / progressBar.w;
     videoElement.currentTime = ratio * videoElement.duration;
@@ -622,7 +610,7 @@ function nextVideo() {
 //
 init();
 
-// Debug Info (optional)
+// Debug info (optional)
 setInterval(() => {
   if (!debugInfo) return;
   debugInfo.textContent = `Playing: ${

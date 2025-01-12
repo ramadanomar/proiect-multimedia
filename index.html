@@ -4,60 +4,80 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="/src/styles.css" />
+    <link rel="stylesheet" href="/src/compiled.css" />
     <title>Vite + TS</title>
   </head>
-  <body class="bg-gray-800 text-white">
-    <div id="app" class="p-4 flex flex-col gap-4 max-w-4xl mx-auto">
-      <h1 class="text-2xl font-bold">Custom Video Player</h1>
+  <body
+    class="bg-gray-900 text-white min-h-screen flex flex-col items-center justify-start"
+  >
+    <div id="app" class="container mx-auto px-4 pt-6">
+      <h1 class="text-3xl font-bold mb-6">Custom Video Player</h1>
 
-      <!-- Playlist management -->
-      <div class="flex items-center gap-2">
-        <input
-          id="file-input"
-          type="file"
-          multiple
-          accept="video/*"
-          class="file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 text-sm text-white"
-        />
+      <!-- Playlist Management -->
+      <div class="flex flex-wrap items-center gap-4 mb-4">
+        <!-- File Input -->
+        <div class="flex items-center gap-2">
+          <input
+            id="file-input"
+            type="file"
+            multiple
+            accept="video/*"
+            class="file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 text-sm text-white cursor-pointer"
+          />
+        </div>
+
         <p class="text-sm text-gray-300">or Drag & Drop here:</p>
+
+        <!-- Drop Zone -->
         <div
           id="drop-zone"
-          class="border border-dashed border-gray-300 p-4 rounded cursor-pointer"
+          class="border border-dashed border-gray-300 px-6 py-3 rounded cursor-pointer hover:bg-gray-800 transition-colors"
         >
           Drop files
         </div>
       </div>
 
       <!-- Playlist UI -->
-      <ul id="playlist" class="bg-gray-700 p-2 rounded"></ul>
+      <ul
+        id="playlist"
+        class="bg-gray-800 border border-gray-700 rounded divide-y divide-gray-700 mb-6"
+      ></ul>
 
       <!-- Video Container (Canvas) -->
-      <!-- We'll draw the video + controls + subtitles inside this canvas -->
-      <canvas
-        id="video-canvas"
-        class="bg-black w-full h-auto rounded"
-        width="800"
-        height="450"
-      >
-        Your browser does not support the HTML5 canvas tag.
-      </canvas>
+      <div class="w-full flex justify-center mb-4">
+        <canvas
+          id="video-canvas"
+          class="bg-black rounded shadow-lg"
+          width="800"
+          height="450"
+        >
+          Your browser does not support the HTML5 canvas tag.
+        </canvas>
+      </div>
 
       <!-- Effects Selection -->
-      <div>
-        <label for="effect-select" class="mr-2">Select Video Effect:</label>
-        <select id="effect-select" class="text-black px-2 py-1 rounded">
+      <div class="flex items-center gap-2 mb-4">
+        <label for="effect-select" class="font-medium"
+          >Select Video Effect:</label
+        >
+        <select
+          id="effect-select"
+          class="text-gray-900 px-2 py-1 rounded border border-gray-300 focus:ring focus:outline-none focus:ring-blue-500"
+        >
           <option value="none">None</option>
           <option value="grayscale">Grayscale</option>
           <option value="invert">Invert</option>
           <option value="threshold">Threshold</option>
-          <!-- Add your custom effects here -->
         </select>
       </div>
 
       <!-- Debug Info (optional) -->
-      <div id="debug-info" class="text-sm text-gray-400"></div>
+      <div
+        id="debug-info"
+        class="text-sm text-gray-400 font-mono p-2 bg-gray-800 border border-gray-700 rounded"
+      ></div>
     </div>
+
     <script type="module" src="./src/main.ts"></script>
   </body>
 </html>
