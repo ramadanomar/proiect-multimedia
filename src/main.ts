@@ -304,6 +304,8 @@ class VideoPlayer {
     this.videoElement.src = item.src;
     this.videoElement.currentTime = 0;
     this.videoElement.volume = this.volumeLevel;
+
+    this.previewVideoElement.src = item.src; // Set preview video frame here so it can be reused while skimming through the video
     try {
       await this.videoElement.play();
     } catch (err) {
@@ -655,7 +657,7 @@ class VideoPlayer {
     if (previewTime < 0 || previewTime > this.videoElement.duration) return;
 
     // Seek offscreen video to that time
-    this.previewVideoElement.src = this.videoElement.src;
+    // this.previewVideoElement.src = this.videoElement.src; no need to set src again as this will throw errors
     this.previewVideoElement.currentTime = previewTime;
 
     this.previewVideoElement.play().then(() => {
