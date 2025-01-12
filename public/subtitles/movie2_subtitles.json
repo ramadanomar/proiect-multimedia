@@ -1,0 +1,5 @@
+[
+  { "start": 0, "end": 3, "text": "Intro" },
+  { "start": 4, "end": 9, "text": "Welcome to the second movie!" },
+  { "start": 10, "end": 20, "text": "Enjoy the show!" }
+]
